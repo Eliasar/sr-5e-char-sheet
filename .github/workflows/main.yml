@@ -39,7 +39,7 @@ jobs:
 
       # changes the base-tag in index.html from '/' to 'BlazorGitHubPagesDemo' to match GitHub Pages repository subdirectory
       - name: Change base-tag in index.html from / to sr-5e-char-sheet
-        run: sed -i 's/<base href="\/" \/>/<base href="\/sr-5e-char-sheet\/" \/>/g' release/wwwroot/index.html
+        run: sed -i 's/<base href="\/" \/>/<base href="\/sr-5e-char-sheet\/" \/>/g' pages/wwwroot/index.html
       
       # Publishes Blazor project to the release folder
       - name: Publish .NET Core Project
