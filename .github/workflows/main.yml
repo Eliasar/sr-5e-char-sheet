@@ -36,13 +36,20 @@ jobs:
           #owner: # optional
           # Optional NuGet.config location, if your NuGet.config isn't located in the root of the repo.
           #config-file: # optional
+
+      # changes the base-tag in index.html from '/' to 'BlazorGitHubPagesDemo' to match GitHub Pages repository subdirectory
+      - name: Change base-tag in index.html from / to sr-5e-char-sheet
+        run: sed -i 's/<base href="\/" \/>/<base href="\/sr-5e-char-sheet\/" \/>/g' release/wwwroot/index.html
       
       # Publishes Blazor project to the release folder
       - name: Publish .NET Core Project
         run: dotnet publish src/src.csproj -c Release -o pages --nologo
+
+      - name: Add .nojekyll file
+        run: touch pages/wwwroot/.nojekyll
       
-      # Commit to GitHubPages
-      - name: Commit wwwroot to GitHub Pages
+      # Deploy to GitHub Pages
+      - name: Deploy wwwroot to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@3.7.1
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
