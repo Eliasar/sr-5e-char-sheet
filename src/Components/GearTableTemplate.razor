@@ -1,0 +1,70 @@
+@using JsonModels.Character
+
+<table id="@TableName" class="table table-striped">
+    <thead class="thead-light">
+        <tr>@TableHeader</tr>
+    </thead>
+    <tbody>
+        @for (int i = 0; i < Items.Count; i++)
+        {
+            var item = Items[i];
+
+            <tr>
+                @RowTemplate(item)
+            </tr>
+            @if (item.Children?.Gear.Count > 0)
+            {
+                <GearTableRowTemplate
+                    Items="@item.Children.Gear"
+                    ParentId="@item.Guid">
+                    <RowTemplate>
+                        <td>@context.ParentId</td>
+                        <td>@context.Guid</td>
+                        <td>@($"{context.Name}{(context.Extra != null ? $" [{context.Extra}]" : "")}")</td>
+                        <td>@context.Category</td>
+                        <td>@context.Qty</td>
+                    </RowTemplate>
+                </GearTableRowTemplate>
+            }
+        }
+    </tbody>
+</table>
+
+@code {
+    [Parameter]
+    public RenderFragment TableHeader { get; set; }
+
+    [Parameter]
+    public RenderFragment<Gear> RowTemplate { get; set; }
+
+    [Parameter]
+    public IReadOnlyList<Gear> Items { get; set; }
+
+    [Parameter]
+    public string TableName { get; set; }
+
+    [Inject]
+    private IJSRuntime JS { get; set; }
+
+    private bool shouldRender = true;
+    protected override bool ShouldRender()
+    {
+        return shouldRender;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool isFirstRender)
+    {
+        if (!isFirstRender)
+        {
+            await CreateTreeGrid(TableName);
+            shouldRender = false;
+        }
+
+        await base.OnAfterRenderAsync(isFirstRender);
+    }
+
+    private async Task CreateTreeGrid(string tableId)
+    {
+        await JS.InvokeVoidAsync("bootstrapTableFunctions.createTreeGrid", $"#{tableId}");
+    }
+}

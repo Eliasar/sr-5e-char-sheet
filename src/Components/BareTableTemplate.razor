@@ -1,0 +1,38 @@
+@typeparam TItem
+
+<table id="@TableName" class="table table-striped" data-detail-view="true"
+    data-detail-view-icon="false" data-detail-view-by-click="true"
+    data-detail-formatter="bootstrapTableFunctions.importantDetailFormatter">
+    <thead class="thead-light">
+        <tr>@TableHeader</tr>
+    </thead>
+    <tbody>
+        @for (int i = 0; i < Items.Count; i++)
+        {
+            <tr>
+                @RowTemplate(Items[i])
+                @if (@ChildDetailTemplate != null)
+                {
+                    @ChildDetailTemplate(Items[i])
+                }
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    [CascadingParameter]
+    public RenderFragment TableHeader { get; set; }
+
+    [CascadingParameter]
+    public RenderFragment<TItem> RowTemplate { get; set; }
+
+    [CascadingParameter]
+    public RenderFragment<TItem> ChildDetailTemplate { get; set; }
+
+    [CascadingParameter]
+    public IReadOnlyList<TItem> Items { get; set; }
+
+    [CascadingParameter]
+    public string TableName { get; set; }
+}

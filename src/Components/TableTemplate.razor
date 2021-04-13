@@ -1,0 +1,48 @@
+@typeparam TItem
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="row justify-content-between">
+            <h2>@TableLabel</h2>
+        </div>
+        <table id="@TableName" class="table table-striped" data-detail-view="true"
+            data-detail-view-icon="false" data-detail-view-by-click="true"
+            data-detail-formatter="bootstrapTableFunctions.importantDetailFormatter">
+            <thead class="thead-light">
+                <tr>@TableHeader</tr>
+            </thead>
+            <tbody>
+                @for (int i = 0; i < Items.Count; i++)
+                {
+                    <tr>
+                        @RowTemplate(Items[i])
+                        @if (@ChildDetailTemplate != null)
+                        {
+                            @ChildDetailTemplate(Items[i])
+                        }
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public RenderFragment TableHeader { get; set; }
+
+    [Parameter]
+    public RenderFragment<TItem> RowTemplate { get; set; }
+
+    [Parameter]
+    public RenderFragment<TItem> ChildDetailTemplate { get; set; }
+
+    [Parameter]
+    public IReadOnlyList<TItem> Items { get; set; }
+
+    [Parameter]
+    public string TableName { get; set; }
+
+    [Parameter]
+    public string TableLabel { get; set; }
+}

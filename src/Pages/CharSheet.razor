@@ -1,184 +1,557 @@
 ﻿@page "/char-sheet"
+@using src.Client
+@using src.Components
 
-<h1>CharSheet</h1>
+<h1>CharSheet - @Name (@Alias)</h1>
 
 <div class="container">
-    <div class="row justify-content-between">
-        
+    <div class="row">
         @* Attributes *@
-        <div class="col-xs-12 col-xl-6">
+        <div class="col-xs-12 col-sm-6">
             <div class="row">
                 <h2>Attributes</h2>
             </div>
+            <table id="attribute-table" class="table table-striped">
+                <thead class="thead-light">
+                    <tr>
+                        <th data-field="name">Name</th>
+                        <th data-field="base">Base</th>
+                        <th data-field="total">Total</th>
+                        <th data-field="metatype">Metatype</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <Attribute @ref="@Body"></Attribute>
+                    <Attribute @ref="@Agility"></Attribute>
+                    <Attribute @ref="@Reaction"></Attribute>
+                    <Attribute @ref="@Strength"></Attribute>
+                    <Attribute @ref="@Charisma"></Attribute>
+                    <Attribute @ref="@Intuition"></Attribute>
+                    <Attribute @ref="@Logic"></Attribute>
+                    <Attribute @ref="@Willpower"></Attribute>
+                    <Attribute @ref="@Edge"></Attribute>
+                    <Attribute @ref="@Magic"></Attribute>
+                </tbody>
+            </table>
+        </div>
+
+        @* Damage Tracks and Current Effects *@
+        <div class="col-xs-12 col-sm-6">
+            
+            @* Damage Tracks *@
             <div class="row">
-                <div class="col-2">Name</div>
-                <div class="col-2">Base</div>
-                <div class="col-2">Total</div>
-                <div class="col-6">Metatype</div>
-            </div>
-            @foreach (var stat in Attributes)
-            {
-                <div class="row">
-                    <div class="col-2">@stat.Name</div>
-                    <div class="col-2">@stat.Base</div>
-                    <div class="col-2"><strong>@stat.Total</strong></div>
-                    <div class="col-6">@stat.Min / @stat.Max (@stat.Aug)</div>
+                <div class="col-6">
+                    <div class="row">
+                        <h3>Physical Track</h3>
+                    </div>
+
+                    <Slider Id="physical-slider" DamageTrack="@DamageTrackPhysical"
+                        OnDamageTrackChanged="@UpdateWoundModifiers" />
                 </div>
-            }
-        </div>
 
-        @* Damage Tracks *@
-        <div class="col-xs-6 col-xl-3">
-            <div class="row">
-                <h3>Physical Track</h3>
+                <div class="col-6">
+                    <div class="row">
+                        <h3>Stun Track</h3>
+                    </div>
+
+                    <Slider Id="stun-slider" DamageTrack="@DamageTrackStun"
+                        OnDamageTrackChanged="@UpdateWoundModifiers" />
+                </div>
             </div>
 
-            <div id="physical-track" class="row track-utils offset-xl-1">
-            @for (int i = 1; i <= DamageTrackPhysical.Boxes + DamageTrackPhysical.Overflow + 1; i++)
-            {
-                var j = i;
-
-                @* Wound *@
-                if (i <= DamageTrackPhysical.Boxes)
-                {
-                    if (i % 3 == 0)
-                    {
-                        <span class="track border border-warning">wound -@(i / 3)</span>
-                    }
-                    else
-                    {
-                        <span class="track border border-warning">box</span>
-                    }
-                }
-
-                @* Overflow *@
-                if (i > DamageTrackPhysical.Boxes)
-                {
-                    <span class="track track-overflow border border-warning">OF</span>
-                }
-
-                if (i == DamageTrackPhysical.Boxes + DamageTrackPhysical.Overflow + 1)
-                {
-                    <span class="track track-overflow border border-warning">
-                        <div class="row h-100 justify-content-center align-items-center">
-                            <img src="icons/ded.png" />
-                        </div>
-                    </span>
-                }
-
-                @* Line Break on every third box *@
-                if (i % 3 == 0)
-                {
-                    <div class="w-100"></div>
-                }
-            }
+            @* Current Effects *@
+            <div class="row mt-4">
+                <h2>Current Effects</h2>
             </div>
-        </div>
-
-        <div class="col-xs-6 col-xl-3">
-            <div class="row">
-                <h3>Stun Track</h3>
-            </div>
-
-            <div id="stun-track" class="row track-utils offset-xl-1">
-            @for (int i = 1; i <= DamageTrackStun.Boxes + DamageTrackStun.Overflow + 1; i++)
-            {
-                var j = i;
-
-                @* Wound *@
-                if (i <= DamageTrackStun.Boxes)
-                {
-                    if (i % 3 == 0)
+            <table id="effect-table" class="table table-striped">
+                <thead class="thead-light">
+                    <tr>
+                        <th data-field="id" data-visible="false"></th>
+                        <th data-field="name">Name</th>
+                        <th data-field="affected">Value Affected</th>
+                        <th data-field="rating">Rating</th>
+                        <th data-formatter="bootstrapTableFunctions.effectDeactivateFormatter"
+                            data-events="bootstrapTableFunctions"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var effect in EffectManager.Effects)
                     {
-                        <input type="checkbox" class="btn-check" id="btncheck@(i)" autocomplete="off">
-                        <label class="track border border-warning" for="btncheck@(i)">Wound @i</label>
+                        <tr>
+                            <td>@EffectManager.Effects.FindIndex(e => e.Name == effect.Name)</td>
+                            <td>@effect.Name</td>
+                            <td>@effect.ValueToAffect</td>
+                            <td>@effect.Rating</td>
+                            <td></td>
+                        </tr>
                     }
-                    else
-                    {
-                        <input type="checkbox" class="btn-check" id="btncheck@(i)" autocomplete="off">
-                        <label class="track border border-warning" for="btncheck@(i)">Checkbox @i</label>
-                    }
-                }
-
-                @* Overflow *@
-                if (i == DamageTrackStun.Boxes + DamageTrackStun.Overflow + 1)
-                {
-                    <input type="checkbox" class="btn-check" id="btncheck@(i)" autocomplete="off">
-                    <label class="track track-overflow border border-warning" for="btncheck@(i)">
-                        <div class="row h-100 justify-content-center align-items-center">
-                            <img src="icons/ded.png" />
-                        </div>
-                    </label>
-                }
-                else if (i > DamageTrackStun.Boxes)
-                {
-                    <input type="checkbox" class="btn-check" id="btncheck@(i)" autocomplete="off">
-                    <label class="track track-overflow border border-warning" for="btncheck@(i)">Checkbox @i</label>
-                }
-
-                @* Line Break on every third box *@
-                if (i % 3 == 0)
-                {
-                    <div class="w-100"></div>
-                }
-            }
-            </div>
+                </tbody>
+            </table>
         </div>
-
-        @* Test Button Group *@
-        <div class="btn-group" role="group" aria-label="Basic checkbox toggle button group">
-            <input type="checkbox" class="btn-check" id="btncheck1" autocomplete="off">
-            <label class="btn btn-outline-primary" for="btncheck1">Checkbox 1</label>
-
-            <input type="checkbox" class="btn-check" id="btncheck2" autocomplete="off">
-            <label class="btn btn-outline-primary" for="btncheck2">Checkbox 2</label>
-
-            <input type="checkbox" class="btn-check" id="btncheck3" autocomplete="off">
-            <label class="btn btn-outline-primary" for="btncheck3">Checkbox 3</label>
-        </div>
-
+    </div>
+    <div class="row">
         @* Important *@
         @* TODO: make this a list so that user can add what they want to the list *@
-        <div class="col-xs-12 col-xl-6">
+        @* <div class="col-xs-12 col-xl-6 mt-4">
             <div class="row">
                 <h2>Important</h2>
             </div>
-            <div class="row justify-content-between">
-                <div class="col">Initiative</div>
-                <div class="col .ml-auto">@Initiative</div>
-            </div>
-            <div class="row justify-content-between">
-                <div class="col">Armor</div>
-                <div class="col .ml-auto">@Armor</div>
-            </div>
-            <div class="row justify-content-between">
-                <div class="col">Defense</div>
-                <div class="col .ml-auto">@DefenseTest</div>
-            </div>
-            <div class="row justify-content-between">
-                <div class="col">Full Defense</div>
-                <div class="col .ml-auto">@FullDefenseTest</div>
-            </div>
-        </div>
+            <table id="important-table" class="table table-striped" data-detail-view="true"
+                data-detail-view-icon="false" data-detail-view-by-click="true"
+                data-detail-formatter="bootstrapTableFunctions.importantDetailFormatter">
+                <thead class="thead-light">
+                    <tr>
+                        <th data-sortable="true" data-field="name">Name</th>
+                        <th data-sortable="true" data-field="value">Value</th>
+                        <th data-field="detail" data-visible="false">Detail</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var important in Importants)
+                    {
+                        <tr>
+                            <td>@important.Name</td>
+                            <td>@important.Value</td>
+                            <td>@important.Detail</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div> *@
 
-        @* Current Effects *@
-        <div class="col-xs-12 col-xl-6">
+        @* Limits *@
+        @* <div class="col-xs-12 col-xl-6 mt-4">
             <div class="row">
-                <h2>Current Effects</h2>
+                <h2>Limits</h2>
             </div>
+            <table id="limit-table" class="table table-striped" data-detail-view="true" data-detail-view-icon="false"
+                data-detail-view-by-click="true"
+                data-detail-formatter="bootstrapTableFunctions.importantDetailFormatter">
+                <thead class="thead-light">
+                    <tr>
+                        <th data-sortable="true" data-field="name">Name</th>
+                        <th data-sortable="true" data-field="value">Value</th>
+                        <th data-field="detail" data-visible="false">Detail</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var limit in Limits)
+                    {
+                        <tr>
+                            <td>@limit.Name</td>
+                            <td>@limit.Value</td>
+                            @if (limit.Detail != null)
+                            {
+                                <td>
+                                    @foreach (var mod in limit.Detail)
+                                    {
+                                        <p>@mod</p>
+                                    }
+                                </td>
+                            }
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div> *@
+    </div>
+
+    @* Skills *@
+    @* <div class="row mt-4">
+        <div class="col-12">
             <div class="row justify-content-between">
-                <div class="col-5">Name</div>
-                <div class="col-4">Value Affected</div>
-                <div class="col-3">Rating</div>
+                <h2>Skills</h2>
+                <div id="skill-table-toolbar"></div>
             </div>
-            @foreach (var effect in CurrentEffects)
-            {
-                <div class="row justify-content-between">
-                    <div class="col-5">@effect.Name</div>
-                    <div class="col-4">@effect.ValueToAffect</div>
-                    <div class="col-3">@effect.Rating</div>
-                </div>
-            }
+            <table id="skill-table" class="table table-striped col-12"
+                data-buttons="bootstrapTableFunctions.skillButtons" data-buttons-toolbar="#skill-table-toolbar"
+                data-show-button-text="true">
+                <thead class="thead-light">
+                    <tr>
+                        <th data-sortable="true" data-field="name">Name</th>
+                        <th data-sortable="true" data-field="category">Skill Category</th>
+                        <th data-sortable="true" data-field="rating">Rating</th>
+                        <th data-sortable="true" data-field="total">Total</th>
+                        <th data-sortable="true" data-field="spec">Specialization</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var skill in Skills.Where(s => s.Knowledge == "False"))
+                    {
+                        string defaultClass = skill.Default == "False" && skill.Rating == "0" ?
+                "font-italic font-weight-light" : "";
+
+                        <tr>
+                            <td class="@(defaultClass)">@skill.Name</td>
+                            <td class="@(defaultClass)">@skill.Skillcategory</td>
+                            <td class="@(defaultClass)">@skill.Rating</td>
+                            <td class="@(defaultClass)">@skill.Total</td>
+                            <td class="@(defaultClass)">@skill.Spec</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
         </div>
+    </div> *@
+
+    @* Knowledge Skills *@
+    @* <div class="row mt-4">
+        <div class="col-12">
+            <div class="row justify-content-between">
+                <h2>Knowledge Skills</h2>
+            </div>
+            <table id="knowledge-skill-table" class="table table-striped">
+                <thead class="thead-light">
+                    <tr>
+                        <th data-sortable="true" data-field="name">Name</th>
+                        <th data-sortable="true" data-field="category">Skill Category</th>
+                        <th data-sortable="true" data-field="rating">Rating</th>
+                        <th data-sortable="true" data-field="total">Total</th>
+                        <th data-sortable="true" data-field="spec">Specialization</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var skill in Skills.Where(s => s.Knowledge == "True"))
+                    {
+                        string defaultClass = skill.Default == "False" && skill.Rating == "0" ?
+                "font-italic font-weight-light" : "";
+
+                        <tr>
+                            <td class="@(defaultClass)">@skill.Name</td>
+                            <td class="@(defaultClass)">@skill.Skillcategory</td>
+                            <td class="@(defaultClass)">@skill.Rating</td>
+                            <td class="@(defaultClass)">@skill.Total</td>
+                            <td class="@(defaultClass)">@skill.Spec</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div> *@
+
+    @* Melee Weapons *@
+    @* <div class="row mt-4">
+        <div class="col-12">
+            <div class="row justify-content-between">
+                <h2>Melee Weapons</h2>
+            </div>
+            <table id="melee-weapons-table" class="table table-striped">
+                <thead class="thead-light">
+                    <tr>
+                        <th data-sortable="true" data-field="name">Name</th>
+                        <th data-sortable="true" data-field="reach">Reach</th>
+                        <th data-sortable="true" data-field="accuracy">Accuracy</th>
+                        <th data-sortable="true" data-field="ap">AP</th>
+                        <th data-sortable="true" data-field="dv">DV</th>
+                        <th data-sortable="true" data-field="dice-pool">Dice Pool</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var weapon in Weapons.Where(w => w.Type == "Melee"))
+                    {
+                        <tr>
+                            <td>@weapon.Name</td>
+                            <td>@weapon.Reach</td>
+                            <td>@weapon.Accuracy</td>
+                            <td>@weapon.Ap</td>
+                            <td>@weapon.Damage</td>
+                            <td>@weapon.Dicepool</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div> *@
+
+    @* Ranged Weapons *@
+    @* <div class="row mt-4">
+        <div class="col-12">
+            <div class="row justify-content-between">
+                <h2>Ranged Weapons</h2>
+            </div>
+            <table id="ranged-weapons-table" class="table table-striped">
+                <thead class="thead-light">
+                    <tr>
+                        <th data-sortable="true" data-field="name">Name</th>
+                        <th data-sortable="true" data-field="range">Range</th>
+                        <th data-sortable="true" data-field="modes">Modes</th>
+                        <th data-sortable="true" data-field="accuracy">Accuracy</th>
+                        <th data-sortable="true" data-field="ap">AP</th>
+                        <th data-sortable="true" data-field="dv">DV</th>
+                        <th data-sortable="true" data-field="ammo">Ammo</th>
+                        <th data-sortable="true" data-field="dice-pool">Dice Pool</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var weapon in Weapons.Where(w => w.Type == "Ranged"))
+                    {
+                        <tr>
+                            <td>@weapon.Name</td>
+                            <td>@weapon.Ranges.Name</td>
+                            <td>@weapon.Mode</td>
+                            <td>@weapon.Accuracy</td>
+                            <td>@weapon.Ap</td>
+                            <td>@weapon.Damage</td>
+                            <td>@weapon.Ammo</td>
+                            <td>@weapon.Dicepool</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div> *@
+
+    @* Armor *@
+    @* <div class="row mt-4">
+        <div class="col-12">
+            <div class="row justify-content-between">
+                <h2>Armor</h2>
+            </div>
+            <table id="armor-table" class="table table-striped">
+                <thead class="thead-light">
+                    <tr>
+                        <th>Equipped</th>
+                        <th data-sortable="true" data-field="name">Name</th>
+                        <th data-sortable="true" data-field="category">Category</th>
+                        <th data-sortable="true" data-field="armor">Armor</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var armor in Armors)
+                    {
+                        <tr>
+                            <td>@armor.Equipped</td>
+                            <td>@armor.Name</td>
+                            <td>@armor.Category</td>
+                            <td>@armor.armor</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div> *@
+
+    @* Gear *@
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="row justify-content-between">
+                <h2>Gear</h2>
+            </div>
+            <GearTableTemplate Items="Gears" TableName="gear-table">
+                <TableHeader>
+                    <th data-visible="false" data-field="pid">Parent</th>
+                    <th data-visible="false" data-field="id">Guid</th>
+                    <th data-sortable="true" data-field="name">Name</th>
+                    <th data-sortable="true" data-field="category">Category</th>
+                    <th data-sortable="true" data-field="quantity">Quantity</th>
+                </TableHeader>
+                <RowTemplate>
+                    <td></td>
+                    <td>@context.Guid</td>
+                    <td>@($"{context.Name}{(context.Extra != null ? $" [{context.Extra}]" : "")}")</td>
+                    <td>@context.Category</td>
+                    <td>@context.Qty</td>
+                </RowTemplate>
+            </GearTableTemplate>
+        </div>
+    </div>
+
+    @* Drones/Vehicles *@
+    @if (Vehicles != null && Vehicles.Count > 0)
+    {
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="row justify-content-between">
+                    <h2>Drones/Vehicles</h2>
+                </div>
+                <table id="vehicle-table" class="table table-striped">
+                    <thead class="thead-light">
+                        <tr>
+                            <th data-sortable="true" data-field="name">Name</th>
+                            <th data-sortable="true" data-field="category">Category</th>
+                            <th data-sortable="true" data-field="handling">Handling</th>
+                            <th data-sortable="true" data-field="accel">Accel</th>
+                            <th data-sortable="true" data-field="speed">Speed</th>
+                            <th data-sortable="true" data-field="pilot">Pilot</th>
+                            <th data-sortable="true" data-field="body">Body</th>
+                            <th data-sortable="true" data-field="armor">Armor</th>
+                            <th data-sortable="true" data-field="seats">Seats</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var vehicle in Vehicles)
+                        {
+                            <tr>
+                                <td>@vehicle.Name</td>
+                                <td>@vehicle.Category</td>
+                                <td>@vehicle.Handling</td>
+                                <td>@vehicle.Accel</td>
+                                <td>@vehicle.Speed</td>
+                                <td>@vehicle.Pilot</td>
+                                <td>@vehicle.Body</td>
+                                <td>@vehicle.Armor</td>
+                                <td>@vehicle.Seats</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+
+    @* Cyberware/Bioware *@
+    @if (Cyberwares != null && Cyberwares.Count > 0)
+    {
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="row justify-content-between">
+                    <h2>Cyberware/Bioware</h2>
+                </div>
+                <table id="cyberware-table" class="table table-striped">
+                    <thead class="thead-light">
+                        <tr>
+                            <th data-sortable="true" data-field="name">Name</th>
+                            <th data-sortable="true" data-field="category">Category</th>
+                            <th data-sortable="true" data-field="rating">Rating</th>
+                            <th data-sortable="true" data-field="essence">Essence</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var ware in Cyberwares)
+                        {
+                            <tr>
+                                <td>@ware.Name</td>
+                                <td>@ware.Category</td>
+                                <td>@ware.Rating</td>
+                                <td>@ware.Essence</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+
+    @* Spells *@
+    @if (Spells != null && Spells.Count > 0)
+    {
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="row justify-content-between">
+                    <h2>Spells</h2>
+                </div>
+                <table id="spell-table" class="table table-striped" data-show-button-text="true">
+                    <thead class="thead-light">
+                        <tr>
+                            <th data-sortable="true" data-field="name">Name</th>
+                            <th data-sortable="true" data-field="type">Type</th>
+                            <th data-sortable="true" data-field="category">Category</th>
+                            <th data-sortable="true" data-field="descriptors">Descriptors</th>
+                            <th data-sortable="true" data-field="range">Range</th>
+                            <th data-sortable="true" data-field="damage">Damage</th>
+                            <th data-sortable="true" data-field="duration">Duration</th>
+                            <th data-sortable="true" data-field="drain">Drain Value</th>
+                            <th data-sortable="true" data-field="dice-pool">Dice Pool</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var spell in Spells)
+                        {
+                            <tr>
+                                <td>@spell.Name</td>
+                                <td>@spell.Type</td>
+                                <td>@spell.Category</td>
+                                <td>@spell.Descriptors</td>
+                                <td>@spell.Range</td>
+                                <td>@spell.Damage</td>
+                                <td>@spell.Duration</td>
+                                <td>@spell.Dv</td>
+                                <td>@spell.Dicepool</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+
+    @* Powers *@
+    @if (Powers != null && Powers.Count > 0)
+    {
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="row justify-content-between">
+                    <h2>Powers</h2>
+                </div>
+                <table id="power-table" class="table table-striped">
+                    <thead class="thead-light">
+                        <tr>
+                            <th data-sortable="true" data-field="name">Name</th>
+                            <th data-sortable="true" data-field="rating">Rating</th>
+                            <th data-sortable="true" data-field="points">Points Per Level</th>
+                            <th data-sortable="true" data-field="total">Total Points</th>
+                            <th data-sortable="true" data-field="action">Action</th>
+                            <th data-visible="false" data-field="affects">Affects</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var power in Powers)
+                        {
+                            var button = new MarkupString($@"{power.Action} <button type=""button"" class=""btn btn-primary btn-sm"" onClick=""bootstrapTableFunctions.powerAddCurrentEffect('power-table', this)"">+</button>");
+                            var action = string.IsNullOrWhiteSpace(power.Action) ? new MarkupString() : button;
+                            <tr>
+                                <td>@power.Fullname</td>
+                                <td>@power.Rating</td>
+                                <td>@power.Pointsperlevel</td>
+                                <td>@power.Totalpoints</td>
+                                <td>@action</td>
+                                <td>@power.Extra</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+
+    @* Martial Arts *@
+    @if (MartialArts != null && MartialArts.Count > 0)
+    {
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="row justify-content-between">
+                    <h2>Martial Arts</h2>
+                </div>
+                @foreach (var martialArts in MartialArts)
+                {
+                    <h3>@martialArts.Name</h3>
+                    <table id="martial-art-table" class="table table-striped table-sm">
+                        <thead class="thead-light">
+                            <tr>
+                                <th data-sortable="true" data-field="name">Name</th>
+                                <th data-sortable="true" data-field="source">Source</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var technique in martialArts.Martialarttechniques?.Martialarttechnique)
+                            {
+                                <tr>
+                                    <td>@technique.Name</td>
+                                    <td>@technique.Source @technique.Page</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+    }
+
+    @* Notes *@
+    <div class="row mt-4">
+        <div class="row">
+            <h2>Notes</h2>
+        </div>
+        <div class="row">@Notes</div>
     </div>
 </div>
